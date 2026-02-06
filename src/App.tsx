@@ -1,8 +1,11 @@
+import { useState } from "react";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
+  type SortingState,
 } from "@tanstack/react-table";
 import { Box, Heading, Table } from "@radix-ui/themes";
 
@@ -47,11 +50,22 @@ const columns = [
   }),
 ];
 
+const sortIndicator: Record<string, string> = {
+  asc: " ↑",
+  desc: " ↓",
+  none: " ↑↓",
+};
+
 export default function App() {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
   const table = useReactTable({
     data,
     columns,
+    state: { sorting },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
@@ -64,13 +78,18 @@ export default function App() {
           {table.getHeaderGroups().map((headerGroup) => (
             <Table.Row key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <Table.ColumnHeaderCell key={header.id}>
+                <Table.ColumnHeaderCell
+                  key={header.id}
+                  onClick={header.column.getToggleSortingHandler()}
+                  style={{ cursor: "pointer", userSelect: "none" }}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
+                  {sortIndicator[(header.column.getIsSorted() || "none") as string]}
                 </Table.ColumnHeaderCell>
               ))}
             </Table.Row>
