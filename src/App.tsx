@@ -21,6 +21,7 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { GearIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { EditableCell } from "./EditableCell";
 
 type User = {
   id: number;
@@ -30,7 +31,7 @@ type User = {
   department: string;
 };
 
-const data: User[] = [
+const defaultData: User[] = [
   { id: 1, name: "田中太郎", age: 28, email: "tanaka@example.com", department: "営業部" },
   { id: 2, name: "鈴木花子", age: 34, email: "suzuki@example.com", department: "開発部" },
   { id: 3, name: "佐藤一郎", age: 45, email: "sato@example.com", department: "人事部" },
@@ -47,19 +48,19 @@ const columns = [
   }),
   columnHelper.accessor("name", {
     header: "名前",
-    cell: (info) => info.getValue(),
+    cell: EditableCell,
   }),
   columnHelper.accessor("age", {
     header: "年齢",
-    cell: (info) => info.getValue(),
+    cell: EditableCell,
   }),
   columnHelper.accessor("email", {
     header: "メールアドレス",
-    cell: (info) => info.getValue(),
+    cell: EditableCell,
   }),
   columnHelper.accessor("department", {
     header: "部署",
-    cell: (info) => info.getValue(),
+    cell: EditableCell,
   }),
 ];
 
@@ -70,6 +71,7 @@ const sortIndicator: Record<string, string> = {
 };
 
 export default function App() {
+  const [data, setData] = useState(defaultData);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -84,6 +86,15 @@ export default function App() {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    meta: {
+      updateData: (rowIndex, columnId, value) => {
+        setData((prev) =>
+          prev.map((row, index) =>
+            index === rowIndex ? { ...row, [columnId]: value } : row
+          )
+        );
+      },
+    },
   });
 
   return (
