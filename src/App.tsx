@@ -3,11 +3,13 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { Box, Heading, Table } from "@radix-ui/themes";
+import { Box, Heading, Table, TextField } from "@radix-ui/themes";
+import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 type User = {
   id: number;
@@ -58,13 +60,16 @@ const sortIndicator: Record<string, string> = {
 
 export default function App() {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
 
@@ -73,6 +78,17 @@ export default function App() {
       <Heading size="5" mb="4">
         TanStack Table サンプル
       </Heading>
+      <Box mb="3" maxWidth="300px">
+        <TextField.Root
+          placeholder="検索..."
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+        >
+          <TextField.Slot>
+            <MagnifyingGlassIcon />
+          </TextField.Slot>
+        </TextField.Root>
+      </Box>
       <Table.Root variant="surface">
         <Table.Header>
           {table.getHeaderGroups().map((headerGroup) => (
