@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { type CellContext, type RowData } from "@tanstack/react-table";
-import { TextField } from "@radix-ui/themes";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -27,12 +26,18 @@ export function EditableCell<TData extends RowData>({
   };
 
   return (
-    <TextField.Root
-      size="1"
-      variant="surface"
+    <input
       value={value as string}
       onChange={(e) => setValue(e.target.value)}
       onBlur={onBlur}
+      style={{
+        all: "unset",
+        display: "block",
+        width: "100%",
+        padding: "var(--table-cell-padding)",
+        margin: "calc(var(--table-cell-padding) * -1)",
+        cursor: "text",
+      }}
     />
   );
 }
