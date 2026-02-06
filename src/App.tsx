@@ -1,35 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+'use client';
+import { useState } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+import type { ColDef } from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+import { AgGridReact } from "ag-grid-react";
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Row Data Interface
+interface IRow {
+  make: string;
+  model: string;
+  price: number;
+  electric: boolean;
 }
 
-export default App
+// Create new GridExample component
+export default function GridExample() {
+  // Row Data: The data to be displayed.
+  const [rowData] = useState<IRow[]>([
+    { make: "Tesla", model: "Model Y", price: 64950, electric: true },
+    { make: "Ford", model: "F-Series", price: 33850, electric: false },
+    { make: "Toyota", model: "Corolla", price: 29600, electric: false },
+    { make: "Mercedes", model: "EQA", price: 48890, electric: true },
+    { make: "Fiat", model: "500", price: 15774, electric: false },
+    { make: "Nissan", model: "Juke", price: 20675, electric: false },
+  ]);
+
+  // Column Definitions: Defines & controls grid columns.
+  const [colDefs] = useState<ColDef<IRow>[]>([
+    { field: "make" },
+    { field: "model" },
+    { field: "price" },
+    { field: "electric" },
+  ]);
+
+  const defaultColDef: ColDef = {
+    flex: 1,
+  };
+
+  // Container: Defines the grid's theme & dimensions.
+  return (
+    <div style={{ width: "100%", height: "100%" }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={colDefs}
+        defaultColDef={defaultColDef}
+      />
+    </div>
+  );
+}
