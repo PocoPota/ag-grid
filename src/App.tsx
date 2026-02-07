@@ -22,6 +22,7 @@ import {
 } from "@radix-ui/themes";
 import { DownloadIcon, GearIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { EditableCell } from "./EditableCell";
+import { NameCell } from "./NameCell";
 import { downloadCsv } from "./lib/downloadCsv";
 
 type User = {
@@ -50,8 +51,7 @@ const columns = [
   }),
   columnHelper.accessor("name", {
     header: "名前",
-    cell: EditableCell,
-    meta: { editable: true },
+    cell: NameCell,
   }),
   columnHelper.accessor("age", {
     header: "年齢",
