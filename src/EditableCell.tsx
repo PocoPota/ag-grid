@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type CellContext, type RowData } from "@tanstack/react-table";
 
 declare module "@tanstack/react-table" {
@@ -20,32 +20,82 @@ export function EditableCell<TData extends RowData>({
 }: CellContext<TData, unknown>) {
   const initialValue = getValue();
   const [value, setValue] = useState(initialValue);
+  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const editable = column.columnDef.meta?.editable ?? false;
+  const isEditingRef = useRef(false);
 
   useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus();
+    }
+  }, [isEditing]);
+
+  const [isFocused, setIsFocused] = useState(false);
+
   const onBlur = () => {
+    setIsEditing(false);
+    isEditingRef.current = false;
+    setIsFocused(false);
     table.options.meta?.updateData(row.index, column.id, value);
   };
 
-  if (!editable) {
-    return <>{value as string}</>;
-  }
-
   return (
     <input
+      ref={inputRef}
       value={value as string}
-      onChange={(e) => setValue(e.target.value)}
+      onChange={(e) => {
+        if (isEditingRef.current) {
+          setValue(e.target.value);
+        }
+      }}
+      onMouseDown={(e) => {
+        if (!isEditing) {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }
+      }}
+      onFocus={() => setIsFocused(true)}
+      onDoubleClick={() => {
+        if (editable) {
+          setIsEditing(true);
+          isEditingRef.current = true;
+        }
+      }}
       onBlur={onBlur}
+      onKeyDown={(e) => {
+        if (e.nativeEvent.isComposing) return;
+        if (e.key === "Escape") {
+          setValue(initialValue);
+          setIsEditing(false);
+          isEditingRef.current = false;
+          inputRef.current?.blur();
+        } else if (e.key === "Enter") {
+          inputRef.current?.blur();
+        } else if (!isEditing && editable && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+          setIsEditing(true);
+          isEditingRef.current = true;
+          setValue("");
+        }
+      }}
       style={{
         all: "unset",
         display: "block",
         width: "100%",
         padding: "var(--table-cell-padding)",
         margin: "calc(var(--table-cell-padding) * -1)",
-        cursor: "text",
+        cursor: isEditing ? "text" : "default",
+        caretColor: isEditing ? undefined : "transparent",
+        userSelect: isEditing ? undefined : "none",
+        boxShadow: isFocused
+          ? isEditing
+            ? "inset 0 0 0 2px var(--accent-9)"
+            : "inset 0 0 0 2px var(--accent-7)"
+          : undefined,
       }}
     />
   );
