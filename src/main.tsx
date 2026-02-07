@@ -4,6 +4,7 @@ import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
 import './table-overrides.css'
 import App from './App.tsx'
+import './global.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
