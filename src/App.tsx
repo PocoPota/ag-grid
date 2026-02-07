@@ -20,8 +20,9 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { GearIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { DownloadIcon, GearIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { EditableCell } from "./EditableCell";
+import { downloadCsv } from "./lib/downloadCsv";
 
 type User = {
   id: number;
@@ -148,6 +149,9 @@ export default function App() {
             </Flex>
           </Popover.Content>
         </Popover.Root>
+        <Button variant="soft" onClick={() => downloadCsv(table)}>
+          <DownloadIcon /> CSV出力
+        </Button>
       </Flex>
       <Table.Root variant="surface">
         <Table.Header>
