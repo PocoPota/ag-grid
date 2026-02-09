@@ -4,9 +4,11 @@ import type { CellId } from "./useSelection";
 
 export function useCopyToClipboard<TData extends RowData>(
   table: Table<TData>,
-  selected: Set<CellId>
+  selected: Set<CellId>,
+  enabled: boolean = true
 ) {
   useEffect(() => {
+    if (!enabled) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!((e.ctrlKey || e.metaKey) && e.key === "c")) return;
       if (selected.size === 0) return;
@@ -66,5 +68,5 @@ export function useCopyToClipboard<TData extends RowData>(
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [table, selected]);
+  }, [table, selected, enabled]);
 }

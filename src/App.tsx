@@ -1,34 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type SortingState,
-  type VisibilityState,
-} from "@tanstack/react-table";
-import { useSelection } from "./hooks/useSelection";
-import { useCopyToClipboard } from "./hooks/useCopyToClipboard";
-import {
-  Box,
-  Button,
-  Checkbox,
-  Flex,
-  Heading,
-  Popover,
-  Table,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
-import { DownloadIcon, GearIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
-import { EditableCell } from "./EditableCell";
-import { NameCell } from "./NameCell";
-import { SelectCell } from "./SelectCell";
-import { downloadCsv } from "./lib/downloadCsv";
+import { useState } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+import { Box, Heading, Separator } from "@radix-ui/themes";
+import { DataTable } from "./components/DataTable";
+import { EditableCell } from "./cells/EditableCell";
+import { NameCell } from "./cells/NameCell";
+import { SelectCell } from "./cells/SelectCell";
 
-const departmentOptions = ["営業部", "開発部", "人事部", "総務部", "経理部"];
+// ─── サンプル1: ユーザー管理 ─────────────────────────────
 
 type User = {
   id: number;
@@ -38,7 +16,7 @@ type User = {
   department: string;
 };
 
-const defaultData: User[] = [
+const defaultUsers: User[] = [
   { id: 1, name: "田中太郎", age: 28, email: "tanaka@example.com", department: "営業部" },
   { id: 2, name: "鈴木花子", age: 34, email: "suzuki@example.com", department: "開発部" },
   { id: 3, name: "佐藤一郎", age: 45, email: "sato@example.com", department: "人事部" },
@@ -46,222 +24,169 @@ const defaultData: User[] = [
   { id: 5, name: "山田健太", age: 38, email: "yamada@example.com", department: "営業部" },
 ];
 
-const columnHelper = createColumnHelper<User>();
+const userColumnHelper = createColumnHelper<User>();
 
-const columns = [
-  columnHelper.accessor("id", {
+const userColumns = [
+  userColumnHelper.accessor("id", {
     header: "ID",
     cell: EditableCell,
     meta: { editable: false },
   }),
-  columnHelper.accessor("name", {
+  userColumnHelper.accessor("name", {
     header: "名前",
     cell: NameCell,
   }),
-  columnHelper.accessor("age", {
+  userColumnHelper.accessor("age", {
     header: "年齢",
     cell: EditableCell,
     meta: { editable: true, type: "number" },
   }),
-  columnHelper.accessor("email", {
+  userColumnHelper.accessor("email", {
     header: "メールアドレス",
     cell: EditableCell,
     meta: { editable: true },
   }),
-  columnHelper.accessor("department", {
+  userColumnHelper.accessor("department", {
     header: "部署",
     cell: SelectCell,
-    meta: { options: departmentOptions },
+    meta: { options: ["営業部", "開発部", "人事部", "総務部", "経理部"] },
   }),
 ];
 
-const sortIndicator: Record<string, string> = {
-  asc: " ↑",
-  desc: " ↓",
-  none: " ↑↓",
+// ─── サンプル2: 商品一覧 ─────────────────────────────────
+
+type Product = {
+  sku: string;
+  productName: string;
+  price: number;
+  stock: number;
+  category: string;
 };
 
+const defaultProducts: Product[] = [
+  { sku: "A-001", productName: "ワイヤレスマウス", price: 3980, stock: 150, category: "家電" },
+  { sku: "A-002", productName: "USB-Cケーブル", price: 1280, stock: 300, category: "家電" },
+  { sku: "B-001", productName: "ノート A5", price: 280, stock: 500, category: "文房具" },
+  { sku: "B-002", productName: "ボールペン 3色", price: 180, stock: 800, category: "文房具" },
+  { sku: "C-001", productName: "デスクライト", price: 5480, stock: 60, category: "家具" },
+];
+
+const productColumnHelper = createColumnHelper<Product>();
+
+const productColumns = [
+  productColumnHelper.accessor("sku", {
+    header: "SKU",
+    cell: EditableCell,
+    meta: { editable: false },
+  }),
+  productColumnHelper.accessor("productName", {
+    header: "商品名",
+    cell: EditableCell,
+    meta: { editable: true },
+  }),
+  productColumnHelper.accessor("price", {
+    header: "価格",
+    cell: EditableCell,
+    meta: { editable: true, type: "number" },
+  }),
+  productColumnHelper.accessor("stock", {
+    header: "在庫数",
+    cell: EditableCell,
+    meta: { editable: true, type: "number" },
+  }),
+  productColumnHelper.accessor("category", {
+    header: "カテゴリ",
+    cell: SelectCell,
+    meta: { options: ["家電", "文房具", "家具", "食品"] },
+  }),
+];
+
+// ─── サンプル3: 読み取り専用テーブル ──────────────────────
+
+type Log = {
+  timestamp: string;
+  level: string;
+  message: string;
+};
+
+const logData: Log[] = [
+  { timestamp: "2026-02-10 09:00:01", level: "INFO", message: "サーバー起動" },
+  { timestamp: "2026-02-10 09:01:23", level: "WARN", message: "メモリ使用量 80% 超過" },
+  { timestamp: "2026-02-10 09:05:45", level: "ERROR", message: "DB接続タイムアウト" },
+  { timestamp: "2026-02-10 09:06:00", level: "INFO", message: "DB接続リトライ成功" },
+];
+
+const logColumnHelper = createColumnHelper<Log>();
+
+const logColumns = [
+  logColumnHelper.accessor("timestamp", { header: "日時" }),
+  logColumnHelper.accessor("level", { header: "レベル" }),
+  logColumnHelper.accessor("message", { header: "メッセージ" }),
+];
+
+// ─── App ────────────────────────────────────────────────
+
 export default function App() {
-  const [data, setData] = useState(defaultData);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const tableRef = useRef<HTMLDivElement>(null);
-
-  const {
-    selected,
-    isDragging,
-    isSelected,
-    clearSelection,
-    handleCellMouseDown,
-    handleCellMouseEnter,
-    handleMouseUp,
-  } = useSelection();
-
-  const table = useReactTable({
-    data,
-    columns,
-    state: { sorting, globalFilter, columnVisibility },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    meta: {
-      updateData: (rowIndex, columnId, value) => {
-        setData((prev) =>
-          prev.map((row, index) =>
-            index === rowIndex ? { ...row, [columnId]: value } : row
-          )
-        );
-      },
-      clearSelection,
-    },
-  });
-
-  useCopyToClipboard(table, selected);
-
-  // Clear selection when sort order or filter changes
-  useEffect(() => {
-    clearSelection();
-  }, [sorting, globalFilter, columnVisibility, clearSelection]);
-
-  // Global mouseup to end drag
-  useEffect(() => {
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => document.removeEventListener("mouseup", handleMouseUp);
-  }, [handleMouseUp]);
-
-  // Escape to clear selection + click outside table to clear
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") clearSelection();
-    };
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
-        clearSelection();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, [clearSelection]);
+  const [users, setUsers] = useState(defaultUsers);
+  const [products, setProducts] = useState(defaultProducts);
 
   return (
     <Box p="5">
-      <Heading size="5" mb="4">
-        TanStack Table サンプル
+      <Heading size="6" mb="5">
+        DataTable サンプル
       </Heading>
-      <Flex gap="3" mb="3" align="end">
-        <Box maxWidth="300px" flexGrow="1">
-          <TextField.Root
-            placeholder="検索..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-          >
-            <TextField.Slot>
-              <MagnifyingGlassIcon />
-            </TextField.Slot>
-          </TextField.Root>
-        </Box>
-        <Popover.Root>
-          <Popover.Trigger>
-            <Button variant="soft">
-              <GearIcon /> 表示カラム
-            </Button>
-          </Popover.Trigger>
-          <Popover.Content>
-            <Flex direction="column" gap="2">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <Text as="label" size="2" key={column.id}>
-                    <Flex gap="2" align="center">
-                      <Checkbox
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      />
-                      {typeof column.columnDef.header === "string"
-                        ? column.columnDef.header
-                        : column.id}
-                    </Flex>
-                  </Text>
-                ))}
-            </Flex>
-          </Popover.Content>
-        </Popover.Root>
-        <Button variant="soft" onClick={() => downloadCsv(table)}>
-          <DownloadIcon /> CSV出力
-        </Button>
-      </Flex>
-      <Table.Root
-        ref={tableRef}
-        variant="surface"
-        className={isDragging ? "selecting" : undefined}
-        style={{ overflowX: "auto" }}
-      >
-          <Table.Header>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <Table.Row key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <Table.ColumnHeaderCell
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    style={{
-                      cursor: "pointer",
-                      userSelect: "none",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                    {sortIndicator[(header.column.getIsSorted() || "none") as string]}
-                  </Table.ColumnHeaderCell>
-                ))}
-              </Table.Row>
-            ))}
-          </Table.Header>
-          <Table.Body>
-            {table.getRowModel().rows.map((row, ri) => (
-              <Table.Row key={row.id}>
-                {row.getVisibleCells().map((cell, ci) => (
-                  <Table.Cell
-                    key={cell.id}
-                    className={
-                      isSelected(ri, ci) ? "cell-selected" : undefined
-                    }
-                    style={{ whiteSpace: "nowrap" }}
-                    onMouseDown={(e) => handleCellMouseDown(ri, ci, e)}
-                    onMouseEnter={() => handleCellMouseEnter(ri, ci)}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Table.Cell>
-                ))}
-              </Table.Row>
-            ))}
-          </Table.Body>
-      </Table.Root>
-      {selected.size > 0 && (
-        <Box mt="3" p="3" style={{ background: "var(--gray-a3)", borderRadius: "var(--radius-2)" }}>
-          <Text size="2" weight="bold">
-            選択中: {selected.size}セル
-          </Text>
-          <Text size="1" color="gray" ml="2" as="span">
-            {" "}[ {[...selected].sort().join(", ")} ]
-          </Text>
-        </Box>
-      )}
+
+      {/* サンプル1: フル機能 */}
+      <Heading size="4" mb="3">
+        ユーザー管理（フル機能）
+      </Heading>
+      <DataTable
+        data={users}
+        columns={userColumns}
+        onCellEdit={(rowIndex, columnId, value) => {
+          setUsers((prev) =>
+            prev.map((row, i) =>
+              i === rowIndex ? { ...row, [columnId]: value } : row
+            )
+          );
+        }}
+      />
+
+      <Separator my="6" size="4" />
+
+      {/* サンプル2: 編集可能、選択なし */}
+      <Heading size="4" mb="3">
+        商品一覧（選択・コピー無効）
+      </Heading>
+      <DataTable
+        data={products}
+        columns={productColumns}
+        features={{ selection: false, copy: false }}
+        onCellEdit={(rowIndex, columnId, value) => {
+          setProducts((prev) =>
+            prev.map((row, i) =>
+              i === rowIndex ? { ...row, [columnId]: value } : row
+            )
+          );
+        }}
+      />
+
+      <Separator my="6" size="4" />
+
+      {/* サンプル3: 読み取り専用 */}
+      <Heading size="4" mb="3">
+        ログ（読み取り専用、ソート・検索のみ）
+      </Heading>
+      <DataTable
+        data={logData}
+        columns={logColumns}
+        features={{
+          selection: false,
+          copy: false,
+          columnVisibility: false,
+          csvExport: false,
+        }}
+      />
     </Box>
   );
 }
