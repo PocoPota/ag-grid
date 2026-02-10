@@ -124,6 +124,35 @@ const logColumns = [
   logColumnHelper.accessor("message", { header: "メッセージ" }),
 ];
 
+// ─── サンプル4: タスク一覧（初期ソート・検索） ──────────
+
+type Task = {
+  taskId: string;
+  title: string;
+  status: string;
+  priority: number;
+  assignee: string;
+};
+
+const taskData: Task[] = [
+  { taskId: "T-001", title: "ログイン画面デザイン", status: "完了", priority: 1, assignee: "田中" },
+  { taskId: "T-002", title: "API認証機能実装", status: "進行中", priority: 3, assignee: "鈴木" },
+  { taskId: "T-003", title: "単体テスト追加", status: "未着手", priority: 2, assignee: "佐藤" },
+  { taskId: "T-004", title: "DB マイグレーション", status: "進行中", priority: 3, assignee: "高橋" },
+  { taskId: "T-005", title: "CI パイプライン構築", status: "未着手", priority: 1, assignee: "山田" },
+  { taskId: "T-006", title: "パフォーマンス改善", status: "進行中", priority: 2, assignee: "田中" },
+];
+
+const taskColumnHelper = createColumnHelper<Task>();
+
+const taskColumns = [
+  taskColumnHelper.accessor("taskId", { header: "タスクID" }),
+  taskColumnHelper.accessor("title", { header: "タイトル" }),
+  taskColumnHelper.accessor("status", { header: "ステータス" }),
+  taskColumnHelper.accessor("priority", { header: "優先度" }),
+  taskColumnHelper.accessor("assignee", { header: "担当者" }),
+];
+
 // ─── App ────────────────────────────────────────────────
 
 export default function App() {
@@ -186,6 +215,20 @@ export default function App() {
           columnVisibility: false,
           csvExport: false,
         }}
+      />
+
+      <Separator my="6" size="4" />
+
+      {/* サンプル4: 初期ソート・検索 */}
+      <Heading size="4" mb="3">
+        タスク一覧（初期ソート・検索付き）
+      </Heading>
+      <DataTable
+        data={taskData}
+        columns={taskColumns}
+        initialSorting={[{ id: "priority", desc: true }]}
+        initialGlobalFilter="進行中"
+        features={{ selection: false, copy: false }}
       />
     </Box>
   );

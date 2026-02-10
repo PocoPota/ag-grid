@@ -51,6 +51,8 @@ type DataTableProps<T> = {
   data: T[];
   columns: ColumnDef<T, any>[];
   features?: DataTableFeatures;
+  initialSorting?: SortingState;
+  initialGlobalFilter?: string;
   onCellEdit?: (rowIndex: number, columnId: string, value: unknown) => void;
 };
 
@@ -64,12 +66,14 @@ export function DataTable<T extends RowData>({
   data,
   columns,
   features: featuresProp,
+  initialSorting = [],
+  initialGlobalFilter = "",
   onCellEdit,
 }: DataTableProps<T>) {
   const f = { ...defaultFeatures, ...featuresProp };
 
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const tableRef = useRef<HTMLDivElement>(null);
 
