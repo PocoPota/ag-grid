@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { Box, Heading, Separator } from "@radix-ui/themes";
+import { z } from "zod";
 import { DataTable } from "./components/DataTable";
 import { EditableCell } from "./cells/EditableCell";
 import { NameCell } from "./cells/NameCell";
@@ -39,12 +40,19 @@ const userColumns = [
   userColumnHelper.accessor("age", {
     header: "年齢",
     cell: EditableCell,
-    meta: { editable: true, type: "number" },
+    meta: {
+      editable: true,
+      type: "number",
+      schema: z.coerce.number().int().min(0).max(150),
+    },
   }),
   userColumnHelper.accessor("email", {
     header: "メールアドレス",
     cell: EditableCell,
-    meta: { editable: true },
+    meta: {
+      editable: true,
+      schema: z.email(),
+    },
   }),
   userColumnHelper.accessor("department", {
     header: "部署",

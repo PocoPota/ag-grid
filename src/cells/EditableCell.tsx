@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { type CellContext, type RowData } from "@tanstack/react-table";
+import { type ZodType } from "zod";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -12,6 +13,7 @@ declare module "@tanstack/react-table" {
     editable?: boolean;
     type?: "text" | "number";
     options?: string[];
+    schema?: ZodType;
   }
 }
 
@@ -24,9 +26,11 @@ export function EditableCell<TData extends RowData>({
   const initialValue = getValue();
   const [value, setValue] = useState(initialValue);
   const [isEditing, setIsEditing] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const editable = column.columnDef.meta?.editable ?? false;
   const inputType = column.columnDef.meta?.type ?? "text";
+  const schema = column.columnDef.meta?.schema;
   const isEditingRef = useRef(false);
 
   useEffect(() => {
@@ -41,71 +45,116 @@ export function EditableCell<TData extends RowData>({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const onBlur = () => {
+  const commitValue = (): boolean => {
+    const committed = inputType === "number" ? Number(value) : value;
+
+    if (schema) {
+      const result = schema.safeParse(committed);
+      if (!result.success) {
+        setValidationError(result.error.issues[0].message);
+        return false;
+      }
+    }
+
+    setValidationError(null);
     setIsEditing(false);
     isEditingRef.current = false;
     setIsFocused(false);
-    const committed = inputType === "number" ? Number(value) : value;
     table.options.meta?.updateData(row.index, column.id, committed);
+    return true;
   };
 
   return (
-    <input
-      ref={inputRef}
-      inputMode={inputType === "number" ? "numeric" : undefined}
-      value={value as string}
-      size={Math.max(String(value).length, 1)}
-      onChange={(e) => {
-        if (isEditingRef.current) {
-          setValue(e.target.value);
-        }
-      }}
-      onMouseDown={(e) => {
-        if (!isEditing) {
-          e.preventDefault();
-          inputRef.current?.focus();
-        }
-      }}
-      onFocus={() => setIsFocused(true)}
-      onDoubleClick={() => {
-        if (editable) {
-          table.options.meta?.clearSelection?.();
-          setIsEditing(true);
-          isEditingRef.current = true;
-        }
-      }}
-      onBlur={onBlur}
-      onKeyDown={(e) => {
-        if (e.nativeEvent.isComposing) return;
-        if (e.key === "Escape") {
-          setValue(initialValue);
-          setIsEditing(false);
-          isEditingRef.current = false;
-          inputRef.current?.blur();
-        } else if (e.key === "Enter") {
-          inputRef.current?.blur();
-        } else if (!isEditing && editable && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-          table.options.meta?.clearSelection?.();
-          setIsEditing(true);
-          isEditingRef.current = true;
-          setValue("");
-        }
-      }}
-      style={{
-        all: "unset",
-        display: "block",
-        width: "100%",
-        padding: "var(--table-cell-padding)",
-        margin: "calc(var(--table-cell-padding) * -1)",
-        cursor: isEditing ? "text" : "default",
-        caretColor: isEditing ? undefined : "transparent",
-        userSelect: isEditing ? undefined : "none",
-        boxShadow: isFocused
-          ? isEditing
-            ? "inset 0 0 0 2px var(--accent-9)"
-            : "inset 0 0 0 2px var(--accent-7)"
-          : undefined,
-      }}
-    />
+    <div style={{ position: "relative" }}>
+      <input
+        ref={inputRef}
+        inputMode={inputType === "number" ? "numeric" : undefined}
+        value={value as string}
+        size={Math.max(String(value).length, 1)}
+        onChange={(e) => {
+          if (isEditingRef.current) {
+            setValue(e.target.value);
+            setValidationError(null);
+          }
+        }}
+        onMouseDown={(e) => {
+          if (!isEditing) {
+            e.preventDefault();
+            inputRef.current?.focus();
+          }
+        }}
+        onFocus={() => setIsFocused(true)}
+        onDoubleClick={() => {
+          if (editable) {
+            table.options.meta?.clearSelection?.();
+            setIsEditing(true);
+            isEditingRef.current = true;
+          }
+        }}
+        onBlur={() => {
+          if (isEditingRef.current) {
+            if (!commitValue()) {
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }
+          } else {
+            setIsFocused(false);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing) return;
+          if (e.key === "Escape") {
+            setValue(initialValue);
+            setValidationError(null);
+            setIsEditing(false);
+            isEditingRef.current = false;
+            inputRef.current?.blur();
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (commitValue()) {
+              inputRef.current?.blur();
+            }
+          } else if (!isEditing && editable && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+            table.options.meta?.clearSelection?.();
+            setIsEditing(true);
+            isEditingRef.current = true;
+            setValue("");
+          }
+        }}
+        style={{
+          all: "unset",
+          display: "block",
+          width: "100%",
+          padding: "var(--table-cell-padding)",
+          margin: "calc(var(--table-cell-padding) * -1)",
+          cursor: isEditing ? "text" : "default",
+          caretColor: isEditing ? undefined : "transparent",
+          userSelect: isEditing ? undefined : "none",
+          boxShadow: isFocused
+            ? isEditing
+              ? validationError
+                ? "inset 0 0 0 2px var(--red-9)"
+                : "inset 0 0 0 2px var(--accent-9)"
+              : "inset 0 0 0 2px var(--accent-7)"
+            : undefined,
+        }}
+      />
+      {validationError && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "100%",
+            fontSize: "11px",
+            lineHeight: 1.2,
+            color: "var(--red-11)",
+            padding: "2px 4px",
+            whiteSpace: "nowrap",
+            zIndex: 10,
+          }}
+        >
+          {validationError}
+        </div>
+      )}
+    </div>
   );
 }
